@@ -13,6 +13,12 @@ class TypedOperation<A>: NSOperation {
     self.queue.addOperation(self)
   }
   
+  // The effect of passing a queue into the constructor is that
+  // the instantiated TypedOperation will not automatically enqueue
+  // itself. It is up to the caller (one with private access, such
+  // as instance methods of a calling TypedOperation) to enqueue
+  // the operation after construction (and typically after 
+  // dependencies have been configured).
   private init(queue: NSOperationQueue, _ f: () -> A) {
     self.queue = queue
     computation = f
