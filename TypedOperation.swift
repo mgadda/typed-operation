@@ -28,9 +28,7 @@ class TypedOperation<A>: NSOperation {
     let toB = TypedOperation<B>(queue: queue) {
       f(self.result!) // assumes A always succeeds (not correct)
     }
-    // PROBLEM: operation may already be executing by the time
-    // this dependency is added, which will certainly break a
-    // multitude of ways.
+
     toB.addDependency(self)
     queue.addOperation(toB)
     return toB
@@ -42,7 +40,6 @@ class TypedOperation<A>: NSOperation {
     return result! // assumes A always succeeds (not correct)
   }
 }
-
 
 let op = TypedOperation<Int>() {
   let i = 10
