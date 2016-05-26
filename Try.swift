@@ -11,7 +11,7 @@ import Foundation
 enum Try<A> {
   case Return(A)
   case Throw(ErrorType)
-  
+
   init(f: () throws -> A) {
     do {
       self = Return(try f())
@@ -19,7 +19,7 @@ enum Try<A> {
       self = Throw(error)
     }
   }
-  
+
   func map<B>(f: (A) throws -> B) -> Try<B> {
     switch self {
     case let Return(a):
@@ -34,12 +34,12 @@ enum Try<A> {
       return .Throw(error)
     }
   }
-  
+
   func flatMap<B>(f: A throws -> Try<B>) -> Try<B> {
     switch self {
     case let Return(a):
       do {
-        return try f(a)        
+        return try f(a)
       } catch {
         let fail: Try<B> = .Throw(error)
         return fail
@@ -48,8 +48,48 @@ enum Try<A> {
       return .Throw(error)
     }
   }
-  
-  
+
+  // TODO: B >: A
+  func handle<B>(f: ErrorType -> B) -> Try<B> {
+    switch self {
+    case Return(_):
+      //return self // this would be possible if B >: A
+      return map { $0 as! B } // instead the compiler asserts nothing and we leave it to the runtime
+
+    case let Throw(error):
+      return Try<B> { f(error) }
+    }
+  }
+
+  // TODO: B >: A
+  func rescue<B>(f: ErrorType -> Try<B>) -> Try<B> {
+    switch self {
+    case Return(_):
+      return map { $0 as! B }
+    case let Throw(error):
+      return f(error)
+    }
+  }
+
+  func onSuccess(f: A -> ()) -> Try<A> {
+    switch self {
+    case let Return(a):
+      f(a)
+    case Throw(_): break
+    }
+    return self
+  }
+
+  func onFailure(f: ErrorType -> ()) -> Try<A> {
+    switch self {
+    case Return(_): break
+    case let Throw(error):
+      f(error)
+
+    }
+    return self
+  }
+
   func get() throws -> A {
     switch self {
     case let Return(a):
@@ -58,7 +98,7 @@ enum Try<A> {
       throw error
     }
   }
-  
+
   func liftToOption() -> A? {
     switch self {
     case let Return(a):
