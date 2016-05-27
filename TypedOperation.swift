@@ -117,7 +117,9 @@ class TypedOperation<A>: NSOperation {
 
   // Flatten this into the `TypedOperation<A>` returned by block. Used by
   // `TypedOperation<A>.flatMap`.
-  private init(queue: NSOperationQueue, block: () -> TypedOperation<A>) {
+  // BUG: this operation _must_ depend upon the operation returned by block()
+  // without which, it will attempt to access block()'s result before
+  /* private */ init(queue: NSOperationQueue, block: () -> TypedOperation<A>) {
     self.queue = queue
     computation = {
       block().result!
@@ -245,7 +247,11 @@ class TypedOperation<A>: NSOperation {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
-        return TypedOperation<B>(queue: self.queue) { f(a) }
+        // psuedo-code:
+        // become
+        return TypedOperation<B>(queue: self.queue) {
+          f(a)
+        }
       case let .Throw(error):
         return TypedOperation<B>(queue: self.queue, error: error)
       }
@@ -271,7 +277,7 @@ class TypedOperation<A>: NSOperation {
     return toB
   }
   // TODO(mgadda): implement SequenceType
-  
+
 }
 enum TypedOperationError: ErrorType {
   case UnknownError
