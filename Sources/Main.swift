@@ -4,7 +4,7 @@ let a = TypedOperation(constant: 10)
 let b = a.map2 { result in
   result * 10
 }
-print(try b.awaitResult())
+//print(try b.awaitResult())
 
 //let queue = NSOperationQueue()
 //let become = TypedOperation(queue: queue, block: { () -> TypedOperation<Int> in
