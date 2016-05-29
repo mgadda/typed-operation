@@ -1,9 +1,8 @@
 import Foundation
 
-let a = TypedOperation(constant: 10)
-
-let b2 = a.flatMap2 { (result) -> TypedOperation<Int> in
+let b2 = TypedOperation(constant: 10).flatMap { (result) -> TypedOperation<Int> in
   TypedOperation {
+    // Increases liklihood of race condition, if present
     sleep(2)
     return result * 10
   }
@@ -11,8 +10,10 @@ let b2 = a.flatMap2 { (result) -> TypedOperation<Int> in
 print(try b2.awaitResult())
 
 
-let b = TypedOperation(constant: 10).map2 { result in
-  result * 10
+let b = TypedOperation(constant: 10).map { result -> Int in
+  // Increases liklihood of race condition, if present
+  sleep(2)
+  return result * 10
 }
 print(try b.awaitResult())
 
@@ -20,7 +21,8 @@ print(try b.awaitResult())
 let queue = NSOperationQueue()
 let become = TypedOperation(queue: queue) { () -> TypedOperation<Int> in
   let op = TypedOperation<Int>() {
-    sleep(4)
+    // Increases liklihood of race condition, if present
+    sleep(2)
     return 10
   }
   return op

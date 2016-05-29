@@ -8,9 +8,6 @@
 
 import Foundation
 
-typealias KVOContext = UInt8
-var MyObservationContext = KVOContext()
-
 /**
  Adds type safety and implicit dependencies between NSOperations
  */
@@ -140,44 +137,10 @@ class TypedOperation<A>: NSOperation {
     result = computation()
   }
 
-    /**
-     If result of target succeeds, f is invoked with result
-     If result does not succeed, f is not invoked.
-     */
-    func map<B>(f: (A) -> B) -> TypedOperation<B> {
-      let toB = TypedOperation<B>(queue: queue) {
-        // result must have value by the time this operation executes
-        // Luckily, this is guaranteed by NSOperation.addDependency.
-        let nextResult = self.result!.map { f($0) }
-        // This logic is probably not correct
-        switch nextResult {
-        case let .Return(b):
-          return b
-        case let .Throw(err):
-          throw err
-        }
-      }
-  
-      toB.addDependency(self)
-      queue.addOperation(toB)
-      return toB
-    }
-  
-  
-    func flatMap<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
-      let op = {
-        self.result!.map { f($0) }
-      }
-      let toB = TypedOperation<B>(queue: queue, tryOp: op)
-      toB.addDependency(self)
-      queue.addOperation(toB)
-      return toB
-    }
-
-
   /**
    Waits on the operation until it transitions to the finished
    state. That is, until the finished property is true.
+   
    This is probably not the method you're looking for.
    */
   func awaitResult() throws -> A {
@@ -187,8 +150,6 @@ class TypedOperation<A>: NSOperation {
 
   /**
    Join the results of the target operation and the argument operation.
-   TODO(mgadda): determine how to manage error states for joined operations
-   TODO(mgadda): determine if this should be static
    */
   func join<B>(operation: TypedOperation<B>) -> TypedOperation<(A, B)> {
     // Make new typed operation which is dependent up on these two operations
@@ -252,7 +213,7 @@ class TypedOperation<A>: NSOperation {
     return toB
   }
 
-  func map2<B>(f: A -> B) -> TypedOperation<B> {
+  func map<B>(f: A -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
@@ -266,7 +227,7 @@ class TypedOperation<A>: NSOperation {
     })
   }
 
-  func flatMap2<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
+  func flatMap<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
     return transform { (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
@@ -281,34 +242,6 @@ class TypedOperation<A>: NSOperation {
   // available. The `TypedOperation<B>` returned by `f` must be scheduled
   // in distinct queue than self.
   func transform<B>(f: Try<A> -> TypedOperation<B>) -> TypedOperation<B> {
-//
-//    var innerOperation: TypedOperation<B>?
-//
-//    // TODO: handle failures in f here?
-//    // Execute transformation to TypedOperation<B>
-//    let transformBlock = NSBlockOperation {
-//      innerOperation = f(self.result!)
-//    }
-//    transformBlock.addDependency(self)
-//    queue.addOperation(transformBlock)
-//
-//    // Execute resulting TypedOperation<B>
-//    let startInnerOperation = NSBlockOperation {
-//      // what to do here?
-//      innerOperation!.waitUntilFinished()
-//    }
-//    startInnerOperation.addDependency(transformBlock)
-//    NSOperationQueue().addOperation(startInnerOperation)
-//
-//
-//    // Extract and wrap result in final operation
-//    let toB = TypedOperation<B>(queue: queue) {
-//      innerOperation!.result!
-//    }
-//    toB.addDependency(transformBlock)
-//    toB.addDependency(startInnerOperation)
-//    queue.addOperation(toB)
-
     let toB = TypedOperation<B>(queue: queue) {
       f(self.result!)
     }
