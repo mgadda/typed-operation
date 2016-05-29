@@ -8,6 +8,8 @@
 
 import Foundation
 
+typealias KVOContext = UInt8
+var MyObservationContext = KVOContext()
 
 /**
  Adds type safety and implicit dependencies between NSOperations
@@ -16,10 +18,11 @@ class TypedOperation<A>: NSOperation {
   var result: Try<A>? = nil
 
   let computation: () -> Try<A>
-  let queue: NSOperationQueue
+  var queue: NSOperationQueue
 
   private static var defaultQueue: NSOperationQueue {
     let q = NSOperationQueue()
+    q.maxConcurrentOperationCount = 1
     q.name = "TypedOperation"
     return q
   }
@@ -47,7 +50,7 @@ class TypedOperation<A>: NSOperation {
    Immediately enqueue the block defined by f for execution.
    */
   init(f: () throws -> A) {
-    self.queue = NSOperationQueue()
+    self.queue = TypedOperation.defaultQueue
     computation = {
       do {
         return .Return(try f())
@@ -82,22 +85,6 @@ class TypedOperation<A>: NSOperation {
     // Do not enqueue operation, caller will handle this
   }
 
-
-  /**
-   Create a TypedOperation from a block. Useful for implementing flatMap.
-   Caller is expected to enqueue instantiated operation.
-   @deprecated
-   */
-  private init(queue: NSOperationQueue, tryOp: () -> Try<TypedOperation<A>>) {
-    self.queue = queue
-    computation = {
-      tryOp().flatMap { $0.result! }
-    }
-
-    super.init()
-    // Do not enqueue operation, caller will handle this
-  }
-
   private init(queue: NSOperationQueue, tryBlock: () -> Try<A>) {
     self.queue = queue
     computation = tryBlock
@@ -115,55 +102,77 @@ class TypedOperation<A>: NSOperation {
     super.init()
   }
 
-  // Flatten this into the `TypedOperation<A>` returned by block. Used by
-  // `TypedOperation<A>.flatMap`.
-  // BUG: this operation _must_ depend upon the operation returned by block()
-  // without which, it will attempt to access block()'s result before
+//   Flatten this into the `TypedOperation<A>` returned by block. Used by
+//   `TypedOperation<A>.transform`.
   /* private */ init(queue: NSOperationQueue, block: () -> TypedOperation<A>) {
     self.queue = queue
+
     computation = {
-      block().result!
+      let op = block()
+      op.waitUntilFinished()
+
+      return op.result!
     }
     super.init()
+  }
+
+  /**
+   Create a TypedOperation from a block.
+   Caller is expected to enqueue instantiated operation. This operation *must*
+   not be enqueued on the same queue as caller.
+   @deprecated
+   */
+  private init(queue: NSOperationQueue, tryOp: () -> Try<TypedOperation<A>>) {
+    self.queue = queue
+    computation = {
+      // BUG: cannot safely .result! on operation here
+      tryOp().flatMap { op in
+        op.waitUntilFinished()
+        return op.result!
+      }
+    }
+
+    super.init()
+    // Do not enqueue operation, caller will handle this
   }
 
   override func main() {
     result = computation()
   }
 
-  //  /**
-  //   If result of target succeeds, f is invoked with result
-  //   If result does not succeed, f is not invoked.
-  //   */
-  //  func map<B>(f: (A) -> B) -> TypedOperation<B> {
-  //    let toB = TypedOperation<B>(queue: queue) {
-  //      // result must have value by the time this operation executes
-  //      // Luckily, this is guaranteed by NSOperation.addDependency.
-  //      let nextResult = self.result!.map { f($0) }
-  //      // This logic is probably not correct
-  //      switch nextResult {
-  //      case let .Return(b):
-  //        return b
-  //      case let .Throw(err):
-  //        throw err
-  //      }
-  //    }
-  //
-  //    toB.addDependency(self)
-  //    queue.addOperation(toB)
-  //    return toB
-  //  }
-  //
-  //
-  //  func flatMap<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
-  //    let op = {
-  //      self.result!.map { f($0) }
-  //    }
-  //    let toB = TypedOperation<B>(queue: queue, tryOp: op)
-  //    toB.addDependency(self)
-  //    queue.addOperation(toB)
-  //    return toB
-  //  }
+    /**
+     If result of target succeeds, f is invoked with result
+     If result does not succeed, f is not invoked.
+     */
+    func map<B>(f: (A) -> B) -> TypedOperation<B> {
+      let toB = TypedOperation<B>(queue: queue) {
+        // result must have value by the time this operation executes
+        // Luckily, this is guaranteed by NSOperation.addDependency.
+        let nextResult = self.result!.map { f($0) }
+        // This logic is probably not correct
+        switch nextResult {
+        case let .Return(b):
+          return b
+        case let .Throw(err):
+          throw err
+        }
+      }
+  
+      toB.addDependency(self)
+      queue.addOperation(toB)
+      return toB
+    }
+  
+  
+    func flatMap<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
+      let op = {
+        self.result!.map { f($0) }
+      }
+      let toB = TypedOperation<B>(queue: queue, tryOp: op)
+      toB.addDependency(self)
+      queue.addOperation(toB)
+      return toB
+    }
 
 
   /**
@@ -247,9 +256,8 @@ class TypedOperation<A>: NSOperation {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
-        // psuedo-code:
-        // become
-        return TypedOperation<B>(queue: self.queue) {
+        // This operation _must_ not enqueue in the same queue as self. Otherwise deadlock is all but guaranteed.
+        return TypedOperation<B>() {
           f(a)
         }
       case let .Throw(error):
@@ -269,16 +277,49 @@ class TypedOperation<A>: NSOperation {
     }
   }
 
+  // Invoke `f` with the results of this operation, once they're 
+  // available. The `TypedOperation<B>` returned by `f` must be scheduled
+  // in distinct queue than self.
   func transform<B>(f: Try<A> -> TypedOperation<B>) -> TypedOperation<B> {
-    // create operation, make it dependent on self, add it to queue
-    let toB = TypedOperation<B>(queue: queue) { f(self.result!) }
+//
+//    var innerOperation: TypedOperation<B>?
+//
+//    // TODO: handle failures in f here?
+//    // Execute transformation to TypedOperation<B>
+//    let transformBlock = NSBlockOperation {
+//      innerOperation = f(self.result!)
+//    }
+//    transformBlock.addDependency(self)
+//    queue.addOperation(transformBlock)
+//
+//    // Execute resulting TypedOperation<B>
+//    let startInnerOperation = NSBlockOperation {
+//      // what to do here?
+//      innerOperation!.waitUntilFinished()
+//    }
+//    startInnerOperation.addDependency(transformBlock)
+//    NSOperationQueue().addOperation(startInnerOperation)
+//
+//
+//    // Extract and wrap result in final operation
+//    let toB = TypedOperation<B>(queue: queue) {
+//      innerOperation!.result!
+//    }
+//    toB.addDependency(transformBlock)
+//    toB.addDependency(startInnerOperation)
+//    queue.addOperation(toB)
+
+    let toB = TypedOperation<B>(queue: queue) {
+      f(self.result!)
+    }
     toB.addDependency(self)
     queue.addOperation(toB)
     return toB
   }
-  // TODO(mgadda): implement SequenceType
 
+  // TODO(mgadda): implement SequenceType
 }
+
 enum TypedOperationError: ErrorType {
   case UnknownError
 }
