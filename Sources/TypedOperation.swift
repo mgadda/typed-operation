@@ -125,26 +125,6 @@ public class TypedOperation<A: Equatable>: NSOperation {
     super.init()
   }
 
-  /**
-   Execute `block` and flatten its result into `self.result`.
-   Caller is expected to enqueue instantiated operation. This operation *must*
-   not be enqueued on the same queue as caller.
-   @deprecated
-   */
-//  private init(queue: NSOperationQueue, tryOp: () -> Try<TypedOperation<A>>) {
-//    self.queue = queue
-//    computation = {
-//      // BUG: cannot safely .result! on operation here
-//      tryOp().flatMap { op in
-//        op.waitUntilFinished()
-//        return op.result!
-//      }
-//    }
-//
-//    super.init()
-//    // Do not enqueue operation, caller will handle this
-//  }
-
   override public func main() {
     result = computation()
   }
@@ -153,7 +133,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
    Waits on the operation until it transitions to the finished
    state. That is, until the finished property is true.
    
-   This is probably not the method you're looking for.
+   This is probably not the method you're looking for. If you use this method
+   in the main thread, your user interface will _stop responding_ until this
+   method returns.
    */
   func awaitResult() throws -> A {
     waitUntilFinished()
@@ -170,8 +152,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
         operation.result!.map({ (bResult) in
           Tuple2(aResult, bResult)
         })
-      })
-      //return try (self.result!.get(), operation.result!.get())
+      })      
     }
     toAB.addDependency(self)
     toAB.addDependency(operation)
@@ -208,22 +189,28 @@ public class TypedOperation<A: Equatable>: NSOperation {
 
   func handle<B>(f: ErrorType -> B) -> TypedOperation<B> {
     let handleOp = TypedOperation<B>(queue: queue) {
-      try self.result!.handle(f).get()
+      self.result!.handle(f)
     }
     handleOp.addDependency(self)
     queue.addOperation(handleOp)
     return handleOp
   }
 
-//  func rescue<B>(f: ErrorType -> TypedOperation<B>) -> TypedOperation<B> {
-//    let rescueOp = {
-//      self.result!.handle(f)
-//    }
-//    let toB = TypedOperation<B>(queue: queue, tryBlock: rescueOp)
-//    toB.addDependency(self)
-//    queue.addOperation(toB)
-//    return toB
-//  }
+  func rescue<B>(f: ErrorType -> TypedOperation<B>) -> TypedOperation<B> {
+    return transform { (result) -> TypedOperation<B> in
+      switch result {
+      case let .Throw(error):
+        return f(error)
+      case .Return:
+        // return self // this would be possible if B >: A
+        return TypedOperation<B> {
+          result.map { (a) -> B in
+            a as! B
+          }
+        }
+      }
+    }
+  }
 
   func map<B>(f: A throws -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in

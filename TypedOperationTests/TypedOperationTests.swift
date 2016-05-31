@@ -10,7 +10,9 @@ import XCTest
 @testable import TypedOperation
 
 class TypedOperationTests: XCTestCase {
-  class TestError : ErrorType {}
+  enum TestErrors : ErrorType {
+    case TestError
+  }
 
   override func setUp() {
       super.setUp()
@@ -62,14 +64,14 @@ class TypedOperationTests: XCTestCase {
 
   func testFailedOperation() {
     let op = TypedOperation<Int> {
-      throw TestError()
+      throw TestErrors.TestError
     }
     XCTAssertThrowsError(try op.awaitResult())
   }
 
   func testFailedOperationThenMap() {
     let op = TypedOperation<Int> {
-      throw TestError()
+      throw TestErrors.TestError
     }
     let op2 = op.map { result in
       result * 10
@@ -77,25 +79,120 @@ class TypedOperationTests: XCTestCase {
     XCTAssertThrowsError(try op2.awaitResult())
   }
 
+  func testFailedOperationThenFlatMap() {
+    let op = TypedOperation<Int> {
+      throw TestErrors.TestError
+    }
+    let op2 = op.flatMap { result in
+      TypedOperation(constant: result * 10)
+    }
+    XCTAssertThrowsError(try op2.awaitResult())
+  }
+
   func testSecondOpFailure() {
     let op = TypedOperation(constant: 10).map { (result) throws -> Int in
-      throw TestError()
+      throw TestErrors.TestError
     }
     XCTAssertThrowsError(try op.awaitResult())
   }
 
   func testFlatMapThrowError() {
     let op = TypedOperation(constant: 10).flatMap { (result) throws -> TypedOperation<Int> in
-      throw TestError()
-      //return TypedOperation(constant: result * 2)
+      throw TestErrors.TestError
     }
     XCTAssertThrowsError(try op.awaitResult())
   }
 
   func testFlatMapInnerError() {
     let op = TypedOperation(constant: 10).flatMap { (result) -> TypedOperation<Int> in
-      return TypedOperation(error: TestError())
+      return TypedOperation(error: TestErrors.TestError)
     }
     XCTAssertThrowsError(try op.awaitResult())
   }
+
+  func testFlatMapMapWithThrowError() {
+    let op = TypedOperation(constant: 10).flatMap { result in
+      TypedOperation { () throws -> Int in
+        throw TestErrors.TestError
+      }
+    }
+    XCTAssertThrowsError(try op.awaitResult())
+  }
+
+  func testOnSuccess() {
+    let exp = expectationWithDescription("onSuccess")
+    var testResult: Int?
+
+    TypedOperation(constant: 10).onSuccess { result in
+      testResult = result
+      exp.fulfill()
+    }
+    waitForExpectationsWithTimeout(5.0, handler: nil)
+    XCTAssertEqual(testResult, .Some(10))
+  }
+
+  func testOnSuccessWithChaining() {
+    let op = TypedOperation(constant: 10).onSuccess { result in }.map { result in
+      result * 2
+    }
+    XCTAssertEqual(try op.awaitResult(), 20)
+  }
+
+  func testOnFailure() {
+    let exp = expectationWithDescription("onFailure")
+    var testResult: ErrorType?
+
+    TypedOperation<Int>(error: TestErrors.TestError).onFailure { error in
+      testResult = error
+      exp.fulfill()
+    }
+    waitForExpectationsWithTimeout(5.0, handler: nil)
+    XCTAssertNotNil(testResult)
+  }
+
+  func testOnFailureWithChaining() {
+    let op = TypedOperation(error: TestErrors.TestError).onFailure { result in }.map { result in
+      // This should _not_ execute
+      result * 2
+    }
+    XCTAssertThrowsError(try op.awaitResult())
+  }
+
+  func testHandleFailure() {
+    let op = TypedOperation<Int>(error: TestErrors.TestError).handle { error in
+      return 10
+    }
+    XCTAssertEqual(try op.awaitResult(), 10)
+  }
+
+  func testHandleSuccess() {
+    let op = TypedOperation<Int> {
+      return 10
+    }.handle { (error) -> Int in
+      return 20
+    }
+    XCTAssertEqual(try op.awaitResult(), 10)
+  }
+
+  func testRescueFailure() {
+    let op = TypedOperation<Int>(error: TestErrors.TestError).rescue { (error) -> TypedOperation<Int> in
+      TypedOperation(constant: 10)
+    }
+    XCTAssertEqual(try op.awaitResult(), 10)
+  }
+
+  func testRescueSuccess() {
+    let op = TypedOperation<Int> {
+      return 10
+    }.rescue { (error) -> TypedOperation<Int> in
+      TypedOperation(constant: 20)
+    }
+    XCTAssertEqual(try op.awaitResult(), 10)
+  }
+
+  func testJoin() {
+    let op = TypedOperation(constant: 10).join(TypedOperation(constant: 20))
+    XCTAssertEqual(try op.awaitResult(), Tuple2(10, 20))
+  }
+
 }
