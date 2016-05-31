@@ -11,43 +11,38 @@ import Foundation
 /**
  Adds type safety and implicit dependencies between NSOperations
  */
-class TypedOperation<A>: NSOperation {
+public class TypedOperation<A: Equatable>: NSOperation {
   var result: Try<A>? = nil
 
   let computation: () -> Try<A>
   var queue: NSOperationQueue
 
-  private static var defaultQueue: NSOperationQueue {
+  static func makeQueue() -> NSOperationQueue {
     let q = NSOperationQueue()
-    q.maxConcurrentOperationCount = 1
-    q.name = "TypedOperation"
+    //q.maxConcurrentOperationCount = 1
+    q.name = "TypedOperation<\(A.self)> " + unsafeAddressOf(self).debugDescription
     return q
   }
 
-  // A typed operation that resolves to `constant`
-  init(constant: A) {
-    self.queue = TypedOperation.defaultQueue
-    computation = {
-      return .Return(constant)
-    }
-    super.init()
-    self.queue.addOperation(self)
+  private static var defaultQueue: NSOperationQueue {
+    return makeQueue()
   }
 
-  private init(queue: NSOperationQueue, constant: A) {
-    self.queue = queue
-    computation = {
-      return .Return(constant)
-    }
-    super.init()
-    // Do not enqueue operation, call will handle this
-  }
+  // A typed operation that resolves to `constant`
+//  init(constant: A) {
+//    self.queue = TypedOperation.defaultQueue
+//    computation = {
+//      return .Return(constant)
+//    }
+//    super.init()
+//    self.queue.addOperation(self)
+//  }
 
   /**
    Immediately enqueue the block defined by f for execution.
    */
   init(f: () throws -> A) {
-    self.queue = TypedOperation.defaultQueue
+    self.queue = TypedOperation.makeQueue()//TypedOperation.defaultQueue
     computation = {
       do {
         return .Return(try f())
@@ -57,6 +52,24 @@ class TypedOperation<A>: NSOperation {
     }
     super.init()
     self.queue.addOperation(self)
+  }
+
+  convenience init(constant: A) {
+    self.init() { .Return(constant) }
+  }
+
+  // Create a TypedOperation that is an immediate failure
+  convenience init(error: ErrorType) {
+    self.init() { .Throw(error) }
+  }
+
+  private init(queue: NSOperationQueue, constant: A) {
+    self.queue = queue
+    computation = {
+      return .Return(constant)
+    }
+    super.init()
+    // Do not enqueue operation, call will handle this
   }
 
   /**
@@ -82,6 +95,15 @@ class TypedOperation<A>: NSOperation {
     // Do not enqueue operation, caller will handle this
   }
 
+  // `f` directly becomes the computation of this `TypedOperation<A>`
+  // Operation runs in its own queue and is immediately enqueued.
+  private init(tryBlock: () -> Try<A>) {
+    queue = TypedOperation.makeQueue()
+    computation = tryBlock
+    super.init()
+    queue.addOperation(self)
+  }
+
   private init(queue: NSOperationQueue, tryBlock: () -> Try<A>) {
     self.queue = queue
     computation = tryBlock
@@ -90,22 +112,12 @@ class TypedOperation<A>: NSOperation {
     // Do not enqueue operation, caller will handle this
   }
 
-
-
-  // Create a TypedOperation that is an immediate failure
-  init(queue: NSOperationQueue, error: ErrorType) {
-    self.queue = queue
-    computation = { .Throw(error) }
-    super.init()
-  }
-
-//   Flatten this into the `TypedOperation<A>` returned by block. Used by
-//   `TypedOperation<A>.transform`.
-  /* private */ init(queue: NSOperationQueue, block: () -> TypedOperation<A>) {
+  // Execute `block` and flatten its result into `self.result`.
+  private init(queue: NSOperationQueue, typedOpBlock: () -> TypedOperation<A>) {
     self.queue = queue
 
     computation = {
-      let op = block()
+      let op = typedOpBlock()
       op.waitUntilFinished()
 
       return op.result!
@@ -114,26 +126,26 @@ class TypedOperation<A>: NSOperation {
   }
 
   /**
-   Create a TypedOperation from a block.
+   Execute `block` and flatten its result into `self.result`.
    Caller is expected to enqueue instantiated operation. This operation *must*
    not be enqueued on the same queue as caller.
    @deprecated
    */
-  private init(queue: NSOperationQueue, tryOp: () -> Try<TypedOperation<A>>) {
-    self.queue = queue
-    computation = {
-      // BUG: cannot safely .result! on operation here
-      tryOp().flatMap { op in
-        op.waitUntilFinished()
-        return op.result!
-      }
-    }
+//  private init(queue: NSOperationQueue, tryOp: () -> Try<TypedOperation<A>>) {
+//    self.queue = queue
+//    computation = {
+//      // BUG: cannot safely .result! on operation here
+//      tryOp().flatMap { op in
+//        op.waitUntilFinished()
+//        return op.result!
+//      }
+//    }
+//
+//    super.init()
+//    // Do not enqueue operation, caller will handle this
+//  }
 
-    super.init()
-    // Do not enqueue operation, caller will handle this
-  }
-
-  override func main() {
+  override public func main() {
     result = computation()
   }
 
@@ -151,12 +163,12 @@ class TypedOperation<A>: NSOperation {
   /**
    Join the results of the target operation and the argument operation.
    */
-  func join<B>(operation: TypedOperation<B>) -> TypedOperation<(A, B)> {
+  func join<B: Equatable>(operation: TypedOperation<B>) -> TypedOperation<Tuple2<A, B>> {
     // Make new typed operation which is dependent up on these two operations
-    let toAB = TypedOperation<(A, B)>(queue: queue) {
+    let toAB = TypedOperation<Tuple2<A, B>>(queue: queue) {
       self.result!.flatMap({ (aResult) in
         operation.result!.map({ (bResult) in
-          (aResult, bResult)
+          Tuple2(aResult, bResult)
         })
       })
       //return try (self.result!.get(), operation.result!.get())
@@ -203,15 +215,15 @@ class TypedOperation<A>: NSOperation {
     return handleOp
   }
 
-  func rescue<B>(f: ErrorType -> TypedOperation<B>) -> TypedOperation<B> {
-    let rescueOp = {
-      self.result!.handle(f)
-    }
-    let toB = TypedOperation<B>(queue: queue, tryOp: rescueOp)
-    toB.addDependency(self)
-    queue.addOperation(toB)
-    return toB
-  }
+//  func rescue<B>(f: ErrorType -> TypedOperation<B>) -> TypedOperation<B> {
+//    let rescueOp = {
+//      self.result!.handle(f)
+//    }
+//    let toB = TypedOperation<B>(queue: queue, tryBlock: rescueOp)
+//    toB.addDependency(self)
+//    queue.addOperation(toB)
+//    return toB
+//  }
 
   func map<B>(f: A -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in
@@ -221,8 +233,9 @@ class TypedOperation<A>: NSOperation {
         return TypedOperation<B>() {
           f(a)
         }
-      case let .Throw(error):
-        return TypedOperation<B>(queue: self.queue, error: error)
+      case let .Throw(error):        
+        //return TypedOperation<B>(queue: NSOperationQueue(), error: error)
+        return TypedOperation<B>(error: error)
       }
     })
   }
@@ -233,7 +246,7 @@ class TypedOperation<A>: NSOperation {
       case let .Return(a):
         return f(a)
       case let .Throw(error):
-        return TypedOperation<B>(queue: self.queue, error: error)
+        return TypedOperation<B>(error: error)
       }
     }
   }
@@ -253,7 +266,7 @@ class TypedOperation<A>: NSOperation {
   // TODO(mgadda): implement SequenceType
 }
 
-enum TypedOperationError: ErrorType {
+public enum TypedOperationError: ErrorType {
   case UnknownError
 }
 

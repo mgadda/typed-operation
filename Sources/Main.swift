@@ -1,33 +1,38 @@
 import Foundation
 
+// ------------------------
+// Test flatmap
+
 let b2 = TypedOperation(constant: 10).flatMap { (result) -> TypedOperation<Int> in
   TypedOperation {
     // Increases liklihood of race condition, if present
-    sleep(2)
+    //sleep(2)
     return result * 10
   }
 }
 print(try b2.awaitResult())
 
+// ------------------------
+// Test map
 
 let b = TypedOperation(constant: 10).map { result -> Int in
   // Increases liklihood of race condition, if present
-  sleep(2)
+  //sleep(2)
   return result * 10
 }
 print(try b.awaitResult())
 
+// ------------------------
+// Test throwing operations
 
-let queue = NSOperationQueue()
-let become = TypedOperation(queue: queue) { () -> TypedOperation<Int> in
-  let op = TypedOperation<Int>() {
-    // Increases liklihood of race condition, if present
-    sleep(2)
-    return 10
-  }
-  return op
+class TestError : ErrorType {}
+let op = TypedOperation<Int>() {
+  throw TestError()
 }
 
-queue.addOperation(become)
+let op2 = op.map { result -> Int in
+  //sleep(2)
+  return result * 10
+}
 
-print(try become.awaitResult())
+let result = try? op2.awaitResult()

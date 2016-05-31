@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum Try<A> {
+public enum Try<A: Equatable> {
   case Return(A)
   case Throw(ErrorType)
 
@@ -106,5 +106,16 @@ enum Try<A> {
     default:
       return .None
     }
+  }
+}
+
+extension Try: Equatable {}
+
+public func ==<A: Equatable>(lhs: Try<A>, rhs: Try<A>) -> Bool {
+  switch (lhs, rhs) {
+  case let (.Return(left), .Return(right)):
+    return left == right
+  default:
+    return false
   }
 }
