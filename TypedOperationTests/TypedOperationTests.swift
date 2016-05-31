@@ -76,4 +76,26 @@ class TypedOperationTests: XCTestCase {
     }
     XCTAssertThrowsError(try op2.awaitResult())
   }
+
+  func testSecondOpFailure() {
+    let op = TypedOperation(constant: 10).map { (result) throws -> Int in
+      throw TestError()
+    }
+    XCTAssertThrowsError(try op.awaitResult())
+  }
+
+  func testFlatMapThrowError() {
+    let op = TypedOperation(constant: 10).flatMap { (result) throws -> TypedOperation<Int> in
+      throw TestError()
+      //return TypedOperation(constant: result * 2)
+    }
+    XCTAssertThrowsError(try op.awaitResult())
+  }
+
+  func testFlatMapInnerError() {
+    let op = TypedOperation(constant: 10).flatMap { (result) -> TypedOperation<Int> in
+      return TypedOperation(error: TestError())
+    }
+    XCTAssertThrowsError(try op.awaitResult())
+  }
 }

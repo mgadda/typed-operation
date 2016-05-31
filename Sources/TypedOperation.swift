@@ -42,7 +42,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
    Immediately enqueue the block defined by f for execution.
    */
   init(f: () throws -> A) {
-    self.queue = TypedOperation.makeQueue()//TypedOperation.defaultQueue
+    queue = TypedOperation.makeQueue()//TypedOperation.defaultQueue
     computation = {
       do {
         return .Return(try f())
@@ -51,7 +51,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
       }
     }
     super.init()
-    self.queue.addOperation(self)
+    queue.addOperation(self)
   }
 
   convenience init(constant: A) {
@@ -225,26 +225,29 @@ public class TypedOperation<A: Equatable>: NSOperation {
 //    return toB
 //  }
 
-  func map<B>(f: A -> B) -> TypedOperation<B> {
+  func map<B>(f: A throws -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
         // This operation _must_ not enqueue in the same queue as self. Otherwise deadlock is all but guaranteed.
-        return TypedOperation<B>() {
-          f(a)
+        return TypedOperation<B> {
+          try f(a)
         }
-      case let .Throw(error):        
-        //return TypedOperation<B>(queue: NSOperationQueue(), error: error)
+      case let .Throw(error):                
         return TypedOperation<B>(error: error)
       }
     })
   }
 
-  func flatMap<B>(f: A -> TypedOperation<B>) -> TypedOperation<B> {
+  func flatMap<B>(f: A throws -> TypedOperation<B>) -> TypedOperation<B> {
     return transform { (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
-        return f(a)
+        do {
+          return try f(a)
+        } catch {
+          return TypedOperation<B>(error: error)
+        }
       case let .Throw(error):
         return TypedOperation<B>(error: error)
       }
