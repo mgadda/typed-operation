@@ -52,7 +52,7 @@
 		7DF9D8DA1CFB74F900B13862 /* TypedOperationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TypedOperationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF9D8DF1CFB74F900B13862 /* TypedOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypedOperationTests.swift; sourceTree = "<group>"; };
 		7DF9D8E11CFB74F900B13862 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		7DF9FA8F1CFCDB27009E1047 /* Tuple.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tuple.swift; sourceTree = "<group>"; };
+		7DF9FA8F1CFCDB27009E1047 /* Tuple.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Tuple.swift; path = Sources/Tuple.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
