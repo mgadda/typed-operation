@@ -1,0 +1,4 @@
+language: swift
+osx_image: xcode7.3
+xcode_project: TypedOperation.xcodeproj
+xcode_scheme: "TypedOperation Framework"
