@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7DD9E34E1CFFD12400CD8793 /* TryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD9E34D1CFFD12400CD8793 /* TryTests.swift */; };
 		7DF9D8C11CF89DEE00B13862 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF9D8C01CF89DEE00B13862 /* main.swift */; };
 		7DF9D8C91CF8A16A00B13862 /* Try.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF9D8C71CF8A16A00B13862 /* Try.swift */; };
 		7DF9D8CA1CF8A16A00B13862 /* TypedOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF9D8C81CF8A16A00B13862 /* TypedOperation.swift */; };
@@ -42,6 +43,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7DD9E34D1CFFD12400CD8793 /* TryTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TryTests.swift; sourceTree = "<group>"; };
 		7DF9D8BD1CF89DEE00B13862 /* TypedOperationDriver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TypedOperationDriver; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF9D8C01CF89DEE00B13862 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = main.swift; path = Sources/main.swift; sourceTree = "<group>"; };
 		7DF9D8C71CF8A16A00B13862 /* Try.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Try.swift; path = Sources/Try.swift; sourceTree = SOURCE_ROOT; };
@@ -126,6 +128,7 @@
 			children = (
 				7DF9D8DF1CFB74F900B13862 /* TypedOperationTests.swift */,
 				7DF9D8E11CFB74F900B13862 /* Info.plist */,
+				7DD9E34D1CFFD12400CD8793 /* TryTests.swift */,
 			);
 			path = TypedOperationTests;
 			sourceTree = "<group>";
@@ -281,6 +284,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DF9D8E01CFB74F900B13862 /* TypedOperationTests.swift in Sources */,
+				7DD9E34E1CFFD12400CD8793 /* TryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

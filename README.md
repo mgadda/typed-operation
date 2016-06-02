@@ -1,6 +1,6 @@
 ## Overview
 
-TypedOperation provides (mostly) type-safe chainable, nestable composition of NSOperations. 
+TypedOperation provides type-safe chainable, nestable composition of NSOperations.
 
 [![Build Status](https://travis-ci.org/mgadda/typed-operation.svg?branch=master)](https://travis-ci.org/mgadda/typed-operation)
 
@@ -9,13 +9,13 @@ TypedOperation provides (mostly) type-safe chainable, nestable composition of NS
 ### Chaining
 
 ```swift
-func doComputation() -> Int 
+func doComputation() -> Int
 
 let result: TypedOperation<Int> = TypedOperation {
   doComputation()
 }
 
-result.map { someValue in 
+result.map { someValue in
   someValue * 10
 }
 
@@ -58,7 +58,7 @@ rescued.awaitResult() // => 10
 ### For side-effects
 
 ```swift
-TypedOperation(constant: 10).onSuccess { result in 
+TypedOperation(constant: 10).onSuccess { result in
   print("Result was \(result)")
 }.onFailure { error in
   print("Error was \(error)")

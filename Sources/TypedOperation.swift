@@ -187,8 +187,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return self
   }
 
-  func handle<B>(f: ErrorType -> B) -> TypedOperation<B> {
-    let handleOp = TypedOperation<B>(queue: queue) {
+  // TODO: return TypedOperation<B> where B >: A
+  func handle(f: ErrorType -> A) -> TypedOperation<A> {
+    let handleOp = TypedOperation<A>(queue: queue) {
       self.result!.handle(f)
     }
     handleOp.addDependency(self)
@@ -196,18 +197,14 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return handleOp
   }
 
-  func rescue<B>(f: ErrorType -> TypedOperation<B>) -> TypedOperation<B> {
-    return transform { (result) -> TypedOperation<B> in
+  // TODO: return TypedOperation<B> where B >: A
+  func rescue(f: ErrorType -> TypedOperation<A>) -> TypedOperation<A> {
+    return transform { (result) -> TypedOperation<A> in
       switch result {
       case let .Throw(error):
         return f(error)
       case .Return:
-        // return self // this would be possible if B >: A
-        return TypedOperation<B> {
-          result.map { (a) -> B in
-            a as! B
-          }
-        }
+        return self        
       }
     }
   }
