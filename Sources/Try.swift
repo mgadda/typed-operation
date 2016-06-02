@@ -49,23 +49,21 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // TODO: B >: A
-  func handle<B>(f: ErrorType -> B) -> Try<B> {
+  // TODO: return Try<B> where B >: A
+  func handle(f: ErrorType -> A) -> Try<A> {
     switch self {
     case Return(_):
-      //return self // this would be possible if B >: A
-      return map { $0 as! B } // instead the compiler asserts nothing and we leave it to the runtime
-
+      return self
     case let Throw(error):
-      return Try<B> { f(error) }
+      return Try { f(error) }
     }
   }
 
-  // TODO: B >: A
-  func rescue<B>(f: ErrorType -> Try<B>) -> Try<B> {
+  // TODO: return Try<B> where B >: A
+  func rescue(f: ErrorType -> Try<A>) -> Try<A> {
     switch self {
     case Return(_):
-      return map { $0 as! B }
+      return self
     case let Throw(error):
       return f(error)
     }
@@ -75,7 +73,8 @@ public enum Try<A: Equatable> {
     switch self {
     case let Return(a):
       f(a)
-    case Throw(_): break
+    case Throw(_):
+      break
     }
     return self
   }
