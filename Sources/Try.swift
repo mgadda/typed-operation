@@ -8,14 +8,14 @@
 
 import Foundation
 
-// `Try<A>` represents a _synchronous_ computation that may succeed or fail.
+/// `Try<A>` represents a _synchronous_ computation that may succeed or fail.
 public enum Try<A: Equatable> {
   case Return(A)
   case Throw(ErrorType)
 
-  // Creates a new Try with type parameter `A` equal that of the return value of `f`.
-  // `f` is immediately invoked and either resolves to its return value: `Throw(A)`
-  // or resolves to an error: `Throw(ErrorType)`.
+  /// Creates a new Try with type parameter `A` equal that of the return value of `f`.
+  /// `f` is immediately invoked and either resolves to its return value: `Throw(A)`
+  /// or resolves to an error: `Throw(ErrorType)`.
   public init(f: () throws -> A) {
     do {
       self = Return(try f())
@@ -24,11 +24,11 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Invoke `f` with underlying value of type `A` if and only if target has
-  // resovled to `Return(A)`. The return value of `f` becomes a new instance of
-  // `Try<B>`.
-  // If target resolved to `Throw(ErrorType)`, `f` is not invoked and the
-  // is error is propogated into the returned `Try<B>` instance.
+  /// Invoke `f` with underlying value of type `A` if and only if target has
+  /// resovled to `Return(A)`. The return value of `f` becomes a new instance of
+  /// `Try<B>`.
+  /// If target resolved to `Throw(ErrorType)`, `f` is not invoked and the
+  /// is error is propogated into the returned `Try<B>` instance.
   public func map<B>(f: (A) throws -> B) -> Try<B> {
     switch self {
     case let Return(a):
@@ -44,10 +44,10 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Invoke `f` with underlying value of type `A` if and only if target has
-  // resovled to `Return(A)`. The return value of `f` is returned from `flatMap`.
-  // If target resolved to `Throw(ErrorType)`, `f` is not invoked and the
-  // is error is propogated into the returned `Try<B>` instance.
+  /// Invoke `f` with underlying value of type `A` if and only if target has
+  /// resovled to `Return(A)`. The return value of `f` is returned from `flatMap`.
+  /// If target resolved to `Throw(ErrorType)`, `f` is not invoked and the
+  /// is error is propogated into the returned `Try<B>` instance.
   public func flatMap<B>(f: A throws -> Try<B>) -> Try<B> {
     switch self {
     case let Return(a):
@@ -62,8 +62,8 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Invoke `f` with the underlying error if target resolved to `Throw`.
-  // Use this method to recover from a failed computation.
+  /// Invoke `f` with the underlying error if target resolved to `Throw`.
+  /// Use this method to recover from a failed computation.
   public func handle(f: ErrorType -> A) -> Try<A> {
     // TODO: return Try<B> where B >: A
     switch self {
@@ -74,8 +74,8 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Invoke `f` with the underlying error if target resolved to `Throw`.
-  // Use this method to recover from a failed computation.
+  /// Invoke `f` with the underlying error if target resolved to `Throw`.
+  /// Use this method to recover from a failed computation.
   public func rescue(f: ErrorType -> Try<A>) -> Try<A> {
     // TODO: return Try<B> where B >: A
     switch self {
@@ -86,8 +86,8 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Invoke `f` with the underlying result if target resolved to `Return`.
-  // Use this method for side-effects.
+  /// Invoke `f` with the underlying result if target resolved to `Return`.
+  /// Use this method for side-effects.
   public func onSuccess(f: A -> ()) -> Try<A> {
     switch self {
     case let Return(a):
@@ -98,8 +98,8 @@ public enum Try<A: Equatable> {
     return self
   }
 
-  // Invoke `f` with the underlying result if target resolved to `Return`.
-  // Use this method for side-effects.
+  /// Invoke `f` with the underlying result if target resolved to `Return`.
+  /// Use this method for side-effects.
   public func onFailure(f: ErrorType -> ()) -> Try<A> {
     switch self {
     case Return(_): break
@@ -110,8 +110,8 @@ public enum Try<A: Equatable> {
     return self
   }
 
-  // Force target to return the underlying value if target resolved to `Return`.
-  // If target resolved to an error, `get()` rethrows this error.
+  /// Force target to return the underlying value if target resolved to `Return`.
+  /// If target resolved to an error, `get()` rethrows this error.
   public func get() throws -> A {
     switch self {
     case let Return(a):
@@ -121,8 +121,8 @@ public enum Try<A: Equatable> {
     }
   }
 
-  // Convert target into an `Optional<A>`. If target resolved to `Throw`
-  // return `some(underlying)`, otherwise return `some`.
+  /// Convert target into an `Optional<A>`. If target resolved to `Throw`
+  /// return `some(underlying)`, otherwise return `some`.
   public func liftToOption() -> A? {
     switch self {
     case let Return(a):
@@ -135,11 +135,11 @@ public enum Try<A: Equatable> {
 
 extension Try: Equatable {}
 
-// Implements Equatable. If `lhs` and `rhs` _both_ resolve to `Return` _and_
-// their underlying values are equal. Otherwise, `lhs` and `rhs` are not
-// considered equal.
-// Because `ErrorType` does not conform to `Equatable`, it is not possible to
-// equate two failed `Try` instances.
+/// Implements Equatable. If `lhs` and `rhs` _both_ resolve to `Return` _and_
+/// their underlying values are equal. Otherwise, `lhs` and `rhs` are not
+/// considered equal.
+/// Because `ErrorType` does not conform to `Equatable`, it is not possible to
+/// equate two failed `Try` instances.
 public func ==<A: Equatable>(lhs: Try<A>, rhs: Try<A>) -> Bool {
   switch (lhs, rhs) {
   case let (.Return(left), .Return(right)):

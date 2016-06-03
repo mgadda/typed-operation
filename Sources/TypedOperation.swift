@@ -9,9 +9,9 @@
 import Foundation
 
 
-// Adds type safety and implicit dependencies between NSOperations.
-// A TypedOperation encapsulates a typed computation which
-// executes asynchronously.
+/// Adds type safety and implicit dependencies between NSOperations.
+/// A TypedOperation encapsulates a typed computation which
+/// executes asynchronously.
 public class TypedOperation<A: Equatable>: NSOperation {
   var result: Try<A>? = nil
 
@@ -28,7 +28,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return makeQueue()
   }
 
-  // Immediately enqueue the block defined by f for execution.
+  /// Immediately enqueue the block defined by f for execution.
   public init(f: () throws -> A) {
     queue = TypedOperation.makeQueue()
     computation = {
@@ -42,12 +42,12 @@ public class TypedOperation<A: Equatable>: NSOperation {
     queue.addOperation(self)
   }
 
-  // Create a TypedOperation that will resolve to a constant value.
+  /// Create a TypedOperation that will resolve to a constant value.
   public convenience init(constant: A) {
     self.init() { .Return(constant) }
   }
 
-  // Create a TypedOperation that will resolve to an error.
+  /// Create a TypedOperation that will resolve to an error.
   public convenience init(error: ErrorType) {
     self.init() { .Throw(error) }
   }
@@ -74,8 +74,8 @@ public class TypedOperation<A: Equatable>: NSOperation {
     // Do not enqueue operation, caller will handle this
   }
 
-  // `f` directly becomes the computation of this `TypedOperation<A>`
-  // Operation runs in its own queue and is immediately enqueued.
+  /// `f` directly becomes the computation of this `TypedOperation<A>`
+  /// Operation runs in its own queue and is immediately enqueued.
   private init(tryBlock: () -> Try<A>) {
     queue = TypedOperation.makeQueue()
     computation = tryBlock
@@ -91,7 +91,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
     // Do not enqueue operation, caller will handle this
   }
 
-  // Execute `block` and flatten its result into `self.result`.
+  /// Execute `block` and flatten its result into `self.result`.
   private init(queue: NSOperationQueue, typedOpBlock: () -> TypedOperation<A>) {
     self.queue = queue
 
@@ -108,24 +108,23 @@ public class TypedOperation<A: Equatable>: NSOperation {
     result = computation()
   }
 
-  /**
-   Waits on the operation until it transitions to the finished
-   state. That is, until the finished property is true.
 
-   This is probably not the method you're looking for. If you use this method
-   in the main thread, your user interface will _stop responding_ until this
-   method returns.
-
-   Prefer asynchronous methods such as `onSuccess()`, `onFailure()`,
-   `map()` and flatMap()`.
-   */
+  /// Waits on the operation until it transitions to the finished
+  /// state. That is, until the finished property is true.
+  ///
+  /// This is probably not the method you're looking for. If you use this method
+  /// in the main thread, your user interface will _stop responding_ until this
+  /// method returns.
+  ///
+  /// Prefer asynchronous methods such as `onSuccess()`, `onFailure()`,
+  /// `map()` and flatMap()`.
   public func awaitResult() throws -> A {
     waitUntilFinished()
     return try result!.get() // assumes A always succeeds (not correct)
   }
 
 
-  // Join the results of the target operation and the argument operation.
+  /// Join the results of the target operation and the argument operation.
   public func join<B: Equatable>(operation: TypedOperation<B>) -> TypedOperation<Tuple2<A, B>> {
     // Make new typed operation which is dependent up on these two operations
     let toAB = TypedOperation<Tuple2<A, B>>(queue: queue) {
@@ -141,9 +140,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return toAB
   }
 
-  // Asynchronously invoke `f` on target if target resolves successfully.
-  // `f` is not invoked if target fails.
-  // Use this method for its side effects.
+  /// Asynchronously invoke `f` on target if target resolves successfully.
+  /// `f` is not invoked if target fails.
+  /// Use this method for its side effects.
   public func onSuccess(f: A -> ()) -> TypedOperation<A> {
     // design question: should a new TypedOperation<A> (same A) be returned?
     // the result would be that invocations of map on the result must occur
@@ -161,9 +160,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
 
   }
 
-  // Asynchronously invoke `f` on target if target resolve to an error.
-  // `f` is not invoked if target succeeds.
-  // Use this method for its side effects.
+  /// Asynchronously invoke `f` on target if target resolve to an error.
+  /// `f` is not invoked if target succeeds.
+  /// Use this method for its side effects.
   public func onFailure(f: ErrorType -> ()) -> TypedOperation<A> {
     let op = NSBlockOperation {
       self.result!.onFailure(f)
@@ -173,9 +172,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return self
   }
 
-  // Asynchronously invoke `f` if and only if target resovles to an error.
-  // Use this method to recover from an error by returning a new value
-  // of type A.
+  /// Asynchronously invoke `f` if and only if target resovles to an error.
+  /// Use this method to recover from an error by returning a new value
+  /// of type A.
   public func handle(f: ErrorType -> A) -> TypedOperation<A> {
     // TODO: return TypedOperation<B> where B >: A
     let handleOp = TypedOperation<A>(queue: queue) {
@@ -186,9 +185,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
     return handleOp
   }
 
-  // Asynchronously invoke `f` if and only if target resovles to an error.
-  // Use this method to recover from an error by returning a new
-  // `TypedOperation<A>`.
+  /// Asynchronously invoke `f` if and only if target resovles to an error.
+  /// Use this method to recover from an error by returning a new
+  /// `TypedOperation<A>`.
   public func rescue(f: ErrorType -> TypedOperation<A>) -> TypedOperation<A> {
     // TODO: return TypedOperation<B> where B >: A
     return transform { (result) -> TypedOperation<A> in
@@ -201,8 +200,8 @@ public class TypedOperation<A: Equatable>: NSOperation {
     }
   }
 
-  // Asynchronously invoke `f` on target if and only if the target
-  // resolves successfully.
+  /// Asynchronously invoke `f` on target if and only if the target
+  /// resolves successfully.
   public func map<B>(f: A throws -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
@@ -217,8 +216,8 @@ public class TypedOperation<A: Equatable>: NSOperation {
     })
   }
 
-  // Asynchronously invoke `f` on target if and only if the target
-  // resolves successfully.
+  /// Asynchronously invoke `f` on target if and only if the target
+  /// resolves successfully.
   public func flatMap<B>(f: A throws -> TypedOperation<B>) -> TypedOperation<B> {
     return transform { (result) -> TypedOperation<B> in
       switch result {
@@ -234,9 +233,9 @@ public class TypedOperation<A: Equatable>: NSOperation {
     }
   }
 
-  // Invoke `f` with the results of this operation, once they're
-  // available. The `TypedOperation<B>` returned by `f` must be scheduled
-  // in distinct queue than self.
+  /// Invoke `f` with the results of this operation, once they're
+  /// available. The `TypedOperation<B>` returned by `f` must be scheduled
+  /// in distinct queue than self.
   func transform<B>(f: Try<A> -> TypedOperation<B>) -> TypedOperation<B> {
     let toB = TypedOperation<B>(queue: queue) {
       f(self.result!)
