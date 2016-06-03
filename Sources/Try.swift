@@ -12,7 +12,7 @@ public enum Try<A: Equatable> {
   case Return(A)
   case Throw(ErrorType)
 
-  init(f: () throws -> A) {
+  public init(f: () throws -> A) {
     do {
       self = Return(try f())
     } catch {
@@ -20,7 +20,7 @@ public enum Try<A: Equatable> {
     }
   }
 
-  func map<B>(f: (A) throws -> B) -> Try<B> {
+  public func map<B>(f: (A) throws -> B) -> Try<B> {
     switch self {
     case let Return(a):
       do {
@@ -35,7 +35,7 @@ public enum Try<A: Equatable> {
     }
   }
 
-  func flatMap<B>(f: A throws -> Try<B>) -> Try<B> {
+  public func flatMap<B>(f: A throws -> Try<B>) -> Try<B> {
     switch self {
     case let Return(a):
       do {
@@ -50,7 +50,7 @@ public enum Try<A: Equatable> {
   }
 
   // TODO: return Try<B> where B >: A
-  func handle(f: ErrorType -> A) -> Try<A> {
+  public func handle(f: ErrorType -> A) -> Try<A> {
     switch self {
     case Return(_):
       return self
@@ -60,7 +60,7 @@ public enum Try<A: Equatable> {
   }
 
   // TODO: return Try<B> where B >: A
-  func rescue(f: ErrorType -> Try<A>) -> Try<A> {
+  public func rescue(f: ErrorType -> Try<A>) -> Try<A> {
     switch self {
     case Return(_):
       return self
@@ -69,7 +69,7 @@ public enum Try<A: Equatable> {
     }
   }
 
-  func onSuccess(f: A -> ()) -> Try<A> {
+  public func onSuccess(f: A -> ()) -> Try<A> {
     switch self {
     case let Return(a):
       f(a)
@@ -79,7 +79,7 @@ public enum Try<A: Equatable> {
     return self
   }
 
-  func onFailure(f: ErrorType -> ()) -> Try<A> {
+  public func onFailure(f: ErrorType -> ()) -> Try<A> {
     switch self {
     case Return(_): break
     case let Throw(error):
@@ -89,7 +89,7 @@ public enum Try<A: Equatable> {
     return self
   }
 
-  func get() throws -> A {
+  public func get() throws -> A {
     switch self {
     case let Return(a):
       return a
@@ -98,7 +98,7 @@ public enum Try<A: Equatable> {
     }
   }
 
-  func liftToOption() -> A? {
+  public func liftToOption() -> A? {
     switch self {
     case let Return(a):
       return .Some(a)

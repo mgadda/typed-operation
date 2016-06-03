@@ -74,10 +74,21 @@ try joinedOperation.awaitResult() // => Tuple2(10, 20)
 
 ## Installation
 
-TypedOperation is available as a cocoapod, swift package, or as a standalone framework.
+TypedOperation is available as a cocoapod. In your `Podfile`, add:
 
-### Cocoapod
+```ruby
+pod 'TypedOperation'
+```
 
-### Swift Package
+Then do the normal thing and run:
 
-### Framework
+```bash
+$ pod install
+```
+
+If all goes well, open the generated (or updated) xcworkspace and
+add the following to any file where you'd like to use a `TypedOperation`:
+
+```swift
+import TypedOperation
+```

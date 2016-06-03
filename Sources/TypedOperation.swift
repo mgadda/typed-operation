@@ -41,7 +41,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
   /**
    Immediately enqueue the block defined by f for execution.
    */
-  init(f: () throws -> A) {
+  public init(f: () throws -> A) {
     queue = TypedOperation.makeQueue()//TypedOperation.defaultQueue
     computation = {
       do {
@@ -54,12 +54,12 @@ public class TypedOperation<A: Equatable>: NSOperation {
     queue.addOperation(self)
   }
 
-  convenience init(constant: A) {
+  public convenience init(constant: A) {
     self.init() { .Return(constant) }
   }
 
   // Create a TypedOperation that is an immediate failure
-  convenience init(error: ErrorType) {
+  public convenience init(error: ErrorType) {
     self.init() { .Throw(error) }
   }
 
@@ -137,7 +137,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
    in the main thread, your user interface will _stop responding_ until this
    method returns.
    */
-  func awaitResult() throws -> A {
+  public func awaitResult() throws -> A {
     waitUntilFinished()
     return try result!.get() // assumes A always succeeds (not correct)
   }
@@ -145,7 +145,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
   /**
    Join the results of the target operation and the argument operation.
    */
-  func join<B: Equatable>(operation: TypedOperation<B>) -> TypedOperation<Tuple2<A, B>> {
+  public func join<B: Equatable>(operation: TypedOperation<B>) -> TypedOperation<Tuple2<A, B>> {
     // Make new typed operation which is dependent up on these two operations
     let toAB = TypedOperation<Tuple2<A, B>>(queue: queue) {
       self.result!.flatMap({ (aResult) in
@@ -161,7 +161,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
   }
 
   // Use this method for its side effects.
-  func onSuccess(f: A -> ()) -> TypedOperation<A> {
+  public func onSuccess(f: A -> ()) -> TypedOperation<A> {
     // design question: should a new TypedOperation<A> (same A) be returned?
     // the result would be that invocations of map on the result must occur
     // after (i.e. depend upon) the onSuccess computation, even though it's
@@ -178,7 +178,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
 
   }
 
-  func onFailure(f: ErrorType -> ()) -> TypedOperation<A> {
+  public func onFailure(f: ErrorType -> ()) -> TypedOperation<A> {
     let op = NSBlockOperation {
       self.result!.onFailure(f)
     }
@@ -188,7 +188,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
   }
 
   // TODO: return TypedOperation<B> where B >: A
-  func handle(f: ErrorType -> A) -> TypedOperation<A> {
+  public func handle(f: ErrorType -> A) -> TypedOperation<A> {
     let handleOp = TypedOperation<A>(queue: queue) {
       self.result!.handle(f)
     }
@@ -198,7 +198,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
   }
 
   // TODO: return TypedOperation<B> where B >: A
-  func rescue(f: ErrorType -> TypedOperation<A>) -> TypedOperation<A> {
+  public func rescue(f: ErrorType -> TypedOperation<A>) -> TypedOperation<A> {
     return transform { (result) -> TypedOperation<A> in
       switch result {
       case let .Throw(error):
@@ -209,7 +209,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
     }
   }
 
-  func map<B>(f: A throws -> B) -> TypedOperation<B> {
+  public func map<B>(f: A throws -> B) -> TypedOperation<B> {
     return transform({ (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
@@ -223,7 +223,7 @@ public class TypedOperation<A: Equatable>: NSOperation {
     })
   }
 
-  func flatMap<B>(f: A throws -> TypedOperation<B>) -> TypedOperation<B> {
+  public func flatMap<B>(f: A throws -> TypedOperation<B>) -> TypedOperation<B> {
     return transform { (result) -> TypedOperation<B> in
       switch result {
       case let .Return(a):
