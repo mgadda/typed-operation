@@ -10,7 +10,7 @@ import Foundation
 
 public struct Tuple2<T: Equatable, U: Equatable>: Equatable {
   let value: (T, U)
-  init(_ first: T, _ second: U) {
+  public init(_ first: T, _ second: U) {
     value = (first, second)
   }
   var _0: T { return value.0 }
