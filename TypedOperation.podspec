@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "TypedOperation"
-  s.version      = "0.0.1"
+  s.version      = "0.0.2"
   s.summary      = "TypedOperation implements type-safe chainable, nestable composition of NSOperations."
   s.homepage     = "https://github.com/mgadda/typed-operation"
   s.license      = { :type => "Apache License Version 2.0", :file => "LICENSE.txt" }
