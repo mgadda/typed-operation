@@ -9,7 +9,7 @@
 import Foundation
 
 /// `Try<A>` represents a _synchronous_ computation that may succeed or fail.
-public enum Try<A: Equatable> {
+public enum Try<A> {
   case Return(A)
   case Throw(ErrorType)
 
@@ -133,9 +133,7 @@ public enum Try<A: Equatable> {
   }
 }
 
-extension Try: Equatable {}
-
-/// Implements Equatable. If `lhs` and `rhs` _both_ resolve to `Return` _and_
+/// If `lhs` and `rhs` _both_ resolve to `Return` _and_
 /// their underlying values are equal. Otherwise, `lhs` and `rhs` are not
 /// considered equal.
 /// Because `ErrorType` does not conform to `Equatable`, it is not possible to
@@ -147,4 +145,8 @@ public func ==<A: Equatable>(lhs: Try<A>, rhs: Try<A>) -> Bool {
   default:
     return false
   }
+}
+
+public func !=<A: Equatable>(lhs: Try<A>, rhs: Try<A>) -> Bool {
+  return !(lhs == rhs)
 }

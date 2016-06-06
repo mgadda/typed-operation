@@ -12,7 +12,7 @@ import Foundation
 /// Adds type safety and implicit dependencies between NSOperations.
 /// A TypedOperation encapsulates a typed computation which
 /// executes asynchronously.
-public class TypedOperation<A: Equatable>: NSOperation {
+public class TypedOperation<A>: NSOperation {
   var result: Try<A>? = nil
 
   let computation: () -> Try<A>
@@ -125,13 +125,11 @@ public class TypedOperation<A: Equatable>: NSOperation {
 
 
   /// Join the results of the target operation and the argument operation.
-  public func join<B: Equatable>(operation: TypedOperation<B>) -> TypedOperation<Tuple2<A, B>> {
+  public func join<B>(operation: TypedOperation<B>) -> TypedOperation<(A, B)> {
     // Make new typed operation which is dependent up on these two operations
-    let toAB = TypedOperation<Tuple2<A, B>>(queue: queue) {
+    let toAB = TypedOperation<(A, B)>(queue: queue) {
       self.result!.flatMap({ (aResult) in
-        operation.result!.map({ (bResult) in
-          Tuple2(aResult, bResult)
-        })
+        operation.result!.map({ (aResult, $0) })
       })
     }
     toAB.addDependency(self)

@@ -112,7 +112,7 @@ class TypedOperationTests: XCTestCase {
 
   func testFlatMapMapWithThrowError() {
     let op = TypedOperation(constant: 10).flatMap { result in
-      TypedOperation { () throws -> Int in
+      TypedOperation<Int> { () throws -> Int in
         throw TestErrors.TestError
       }
     }
@@ -192,7 +192,8 @@ class TypedOperationTests: XCTestCase {
 
   func testJoin() {
     let op = TypedOperation(constant: 10).join(TypedOperation(constant: 20))
-    XCTAssertEqual(try op.awaitResult(), Tuple2(10, 20))
+    let result = try! op.awaitResult()
+    XCTAssert(result == (10, 20))
   }
 
 }
