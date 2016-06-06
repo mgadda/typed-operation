@@ -126,9 +126,9 @@ class TryTests: XCTestCase {
 
   // Equatable
   func testEquatable() {
-    XCTAssertEqual(Try.Return(10), Try.Return(10))
-    XCTAssertNotEqual(Try.Return(10), Try.Return(20))
-    XCTAssertNotEqual(Try.Return(10), Try.Throw(TestErrors.TestError))
-    XCTAssertNotEqual(Try<Int>.Throw(TestErrors.TestError), Try<Int>.Throw(TestErrors.TestError))
+    XCTAssert(Try.Return(10) == Try.Return(10))    
+    XCTAssert(Try.Return(10) != Try.Return(20))
+    XCTAssert(Try.Return(10) != Try.Throw(TestErrors.TestError))
+    XCTAssert(Try<Int>.Throw(TestErrors.TestError) != Try<Int>.Throw(TestErrors.TestError))
   }
 }
