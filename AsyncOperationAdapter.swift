@@ -12,7 +12,7 @@ import Foundation
 /// computations, such as those performed by NSURLSession, with TypedOperations.
 public class AsyncOperationAdapter<A>: TypedOperation<A> {
   public init(f: ((A?, ErrorType?) -> ()) throws -> ()) {
-    super.init { () -> A in
+    super.init { () -> Try<A> in
       let sema = dispatch_semaphore_create(0)
       var callbackResult: Try<A>?
       do {
@@ -34,7 +34,7 @@ public class AsyncOperationAdapter<A>: TypedOperation<A> {
 
       // TODO: do we really want to wait forever?
       dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
-      return try callbackResult!.get()
+      return callbackResult!
     }
   }
 }

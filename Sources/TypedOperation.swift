@@ -76,7 +76,7 @@ public class TypedOperation<A>: NSOperation {
 
   /// `f` directly becomes the computation of this `TypedOperation<A>`
   /// Operation runs in its own queue and is immediately enqueued.
-  private init(tryBlock: () -> Try<A>) {
+  internal init(tryBlock: () -> Try<A>) {
     queue = TypedOperation.makeQueue()
     computation = tryBlock
     super.init()
