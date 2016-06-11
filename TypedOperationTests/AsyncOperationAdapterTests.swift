@@ -67,6 +67,16 @@ class AsyncOperationAdapterTests: XCTestCase {
       piService.computePiWith(numDigits: 10, callback: callbackHandler)
     }
 
+
+    XCTAssertThrowsError(try op.awaitResult())
+  }
+
+  func testNoFailureOrSuccess() {
+    let piService = PiService(returning: (nil, nil))
+
+    let op = AsyncOperationAdapter { callbackHandler in
+      piService.computePiWith(numDigits: 10, callback: callbackHandler)
+    }
     XCTAssertThrowsError(try op.awaitResult())
   }
 }
