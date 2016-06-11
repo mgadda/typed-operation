@@ -88,10 +88,10 @@ let service: SomeService = /* ... */
 AsyncOperationAdapter<ResultType> { service.doAsyncThing(callback: $0) }
 ```
 
-Or using NSURLSessions as a realistic example:
+Or using NSURLSessions:
 
 ```swift
-let url: NSURL! = NSURL(string: "http://localhost:5000")
+let url: NSURL! = NSURL(string: "http://api.example.com")
 let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
 let op = AsyncOperationAdapter<NSData> { completionHandler in
