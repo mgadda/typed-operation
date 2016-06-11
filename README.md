@@ -1,3 +1,5 @@
+![Typed Operation](/typed_operation.png?raw=true "Typed Operation")
+
 ## Overview
 
 TypedOperation provides type-safe chainable, nestable composition of NSOperations.
