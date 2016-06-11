@@ -74,6 +74,39 @@ let joinedOperation = TypedOperation(constant: 10).join(TypedOperation(constant:
 try joinedOperation.awaitResult() // => Tuple2(10, 20)
 ```
 
+## Wrapping NSURLSessionTasks
+
+Many existing libraries offer asynchronous methods which accept callback functions.
+Using `AsynchOperationAdapter`, you can wrap those existing asynchonrous operations
+to produce `TypedOperations`.
+
+```swift
+protocol SomeService {
+  func doAsyncThing(callback: (ResultType?, NSError?) -> ())
+}
+
+let service: SomeService = /* ... */
+
+AsyncOperationAdapter<ResultType> { service.doAsyncThing(callback: $0) }
+```
+
+Or using NSURLSessions:
+
+```swift
+let url: NSURL! = NSURL(string: "http://api.example.com")
+let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
+
+let op = AsyncOperationAdapter<NSData> { completionHandler in
+  let task = session.dataTaskWithURL(url) { (maybeData, maybeResponse, maybeError) in
+    completionHandler(maybeData, maybeError)
+  }
+  task.resume()
+}
+op.onSuccess { (response: NSData) in
+  print(response)
+}
+```
+
 ## Installation
 
 TypedOperation is available as a cocoapod. In your `Podfile`, add:

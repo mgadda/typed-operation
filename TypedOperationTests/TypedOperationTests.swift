@@ -35,7 +35,7 @@ class TypedOperationTests: XCTestCase {
   
   func testFlatMap() {
     let op = TypedOperation(constant: 10).flatMap { (result) -> TypedOperation<Int> in
-      TypedOperation() {
+      TypedOperation() { () -> Int in
         // Increases liklihood of race condition, if present
         sleep(2)
         return result * 10
