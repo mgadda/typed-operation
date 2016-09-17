@@ -33,7 +33,7 @@ class AsyncOperationAdapterTests: XCTestCase {
     }
 
     let exp = expectation(description: "onSuccess")
-    op.onSuccess { (pi) in
+    let _ = op.onSuccess { (pi) in
       exp.fulfill()
     }
 
@@ -49,7 +49,7 @@ class AsyncOperationAdapterTests: XCTestCase {
     }
 
     let exp = expectation(description: "onFailure")
-    op.onFailure { (pi) in
+    let _ = op.onFailure { (pi) in
       exp.fulfill()
     }
 

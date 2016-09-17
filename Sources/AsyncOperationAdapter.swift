@@ -11,7 +11,7 @@ import Foundation
 /// An adapter which makes it possible to wrap external asynchronous 
 /// computations, such as those performed by NSURLSession, with TypedOperations.
 open class AsyncOperationAdapter<A>: TypedOperation<A> {
-  public init(f: @escaping ((A?, Error?) -> ()) throws -> ()) {
+  public init(f: @escaping (@escaping (A?, Error?) -> ()) throws -> ()) {
     super.init { () -> Try<A> in
       let sema = DispatchSemaphore(value: 0)
       var callbackResult: Try<A>?

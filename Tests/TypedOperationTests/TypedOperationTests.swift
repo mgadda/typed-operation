@@ -123,7 +123,7 @@ class TypedOperationTests: XCTestCase {
     let exp = expectation(description: "onSuccess")
     var testResult: Int?
 
-    TypedOperation(constant: 10).onSuccess { result in
+    let _ = TypedOperation(constant: 10).onSuccess { result in
       testResult = result
       exp.fulfill()
     }
@@ -142,7 +142,7 @@ class TypedOperationTests: XCTestCase {
     let exp = expectation(description: "onFailure")
     var testResult: Error?
 
-    TypedOperation<Int>(error: TestErrors.testError).onFailure { error in
+    let _ = TypedOperation<Int>(error: TestErrors.testError).onFailure { error in
       testResult = error
       exp.fulfill()
     }
