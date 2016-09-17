@@ -11,15 +11,15 @@ import XCTest
 
 class AsyncOperationAdapterTests: XCTestCase {
   class PiService {
-    let queue = NSOperationQueue()
+    let queue = OperationQueue()
     let returning: (Float80?, NSError?)
 
     init(returning: (Float80?, NSError?)) {
       self.returning = returning
     }
 
-    func computePiWith(numDigits precision: Int, callback: (Float80?, NSError?) -> ()) {
-      let op = NSBlockOperation {
+    func computePiWith(numDigits precision: Int, callback: @escaping (Float80?, NSError?) -> ()) {
+      let op = BlockOperation {
         callback(self.returning.0, self.returning.1)
       }
       queue.addOperation(op)
@@ -32,12 +32,12 @@ class AsyncOperationAdapterTests: XCTestCase {
       piService.computePiWith(numDigits: 5, callback: callbackHandler)
     }
 
-    let exp = expectationWithDescription("onSuccess")
-    op.onSuccess { (pi) in
+    let exp = expectation(description: "onSuccess")
+    let _ = op.onSuccess { (pi) in
       exp.fulfill()
     }
 
-    waitForExpectationsWithTimeout(5.0, handler: nil)
+    waitForExpectations(timeout: 5.0, handler: nil)
   }
 
   func testAsyncOperationAdapterFailure() {
@@ -48,12 +48,12 @@ class AsyncOperationAdapterTests: XCTestCase {
       piService.computePiWith(numDigits: 10, callback: callbackHandler)
     }
 
-    let exp = expectationWithDescription("onFailure")
-    op.onFailure { (pi) in
+    let exp = expectation(description: "onFailure")
+    let _ = op.onFailure { (pi) in
       exp.fulfill()
     }
 
-    waitForExpectationsWithTimeout(5.0, handler: nil)
+    waitForExpectations(timeout: 5.0, handler: nil)
   }
 
   // What hapens if the wrapper async computation confusingly returns both
