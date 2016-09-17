@@ -3,3 +3,4 @@ osx_image: xcode8
 xcode_project: TypedOperation.xcodeproj
 xcode_scheme: "TypedOperation Framework"
 xcode_sdk: iphonesimulator10.0
+script: xcodebuild test -scheme "TypedOperation Framework" -sdk iphonesimulator -destination "name=iPhone SE"
