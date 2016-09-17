@@ -10,30 +10,29 @@ import Foundation
 
 /// An adapter which makes it possible to wrap external asynchronous 
 /// computations, such as those performed by NSURLSession, with TypedOperations.
-public class AsyncOperationAdapter<A>: TypedOperation<A> {
-  public init(f: ((A?, ErrorType?) -> ()) throws -> ()) {
+open class AsyncOperationAdapter<A>: TypedOperation<A> {
+  public init(f: @escaping ((A?, Error?) -> ()) throws -> ()) {
     super.init { () -> Try<A> in
-      let sema = dispatch_semaphore_create(0)
+      let sema = DispatchSemaphore(value: 0)
       var callbackResult: Try<A>?
       do {
         // f is the computation with a callback
         // it is asynchronous and will return immediately
         try f { (result, error) in
           if let err = error {
-            callbackResult = .Throw(err)
+            callbackResult = .throw(err)
           } else if let res = result {
-            callbackResult = .Return(res)
+            callbackResult = .return(res)
           } else {
-            callbackResult = .Throw(TypedOperationError.UnknownError)
+            callbackResult = .throw(TypedOperationError.unknownError)
           }
-          dispatch_semaphore_signal(sema)
+          sema.signal()
         }
       } catch {
-        callbackResult = .Throw(error)
+        callbackResult = .throw(error)
       }
 
-      // TODO: do we really want to wait forever?
-      dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER)
+      let _ = sema.wait(timeout: DispatchTime.distantFuture)
       return callbackResult!
     }
   }
