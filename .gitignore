@@ -95,3 +95,4 @@ xcuserdata/
 *.xcscmblueprint
 
 *.un~
+.DS_Store
