@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7DD9E34E1CFFD12400CD8793 /* TryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD9E34D1CFFD12400CD8793 /* TryTests.swift */; };
+		7DF31EBC1D8DB17100484CF7 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 7DF31EBB1D8DB17100484CF7 /* README.md */; };
 		7DF82D971D07E4C900CDFA23 /* AsyncOperationAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF82D961D07E4C900CDFA23 /* AsyncOperationAdapter.swift */; };
 		7DF82D9D1D0B1B4400CDFA23 /* AsyncOperationAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF82D9C1D0B1B4400CDFA23 /* AsyncOperationAdapterTests.swift */; };
 		7DF9D8DB1CFB74F900B13862 /* TypedOperation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DF9D8D11CFB74F900B13862 /* TypedOperation.framework */; };
@@ -29,6 +30,7 @@
 
 /* Begin PBXFileReference section */
 		7DD9E34D1CFFD12400CD8793 /* TryTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TryTests.swift; path = Tests/TypedOperationTests/TryTests.swift; sourceTree = "<group>"; };
+		7DF31EBB1D8DB17100484CF7 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7DF82D961D07E4C900CDFA23 /* AsyncOperationAdapter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AsyncOperationAdapter.swift; path = Sources/AsyncOperationAdapter.swift; sourceTree = "<group>"; };
 		7DF82D9C1D0B1B4400CDFA23 /* AsyncOperationAdapterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AsyncOperationAdapterTests.swift; path = Tests/TypedOperationTests/AsyncOperationAdapterTests.swift; sourceTree = "<group>"; };
 		7DF9D8C71CF8A16A00B13862 /* Try.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Try.swift; path = Sources/Try.swift; sourceTree = SOURCE_ROOT; };
@@ -74,6 +76,7 @@
 		7DF9D8B41CF89DEE00B13862 = {
 			isa = PBXGroup;
 			children = (
+				7DF31EBB1D8DB17100484CF7 /* README.md */,
 				7DF9D8D51CFB74F900B13862 /* Info.plist */,
 				7DF31EBA1D8DA71700484CF7 /* Tests */,
 				7DF9D8CB1CF8B09000B13862 /* Sources */,
@@ -212,6 +215,7 @@
 			files = (
 				7DF9D8E91CFB75B800B13862 /* TypedOperation.swift in Sources */,
 				7DF9FA911CFCDB2B009E1047 /* Tuple.swift in Sources */,
+				7DF31EBC1D8DB17100484CF7 /* README.md in Sources */,
 				7DF82D971D07E4C900CDFA23 /* AsyncOperationAdapter.swift in Sources */,
 				7DF9D8E81CFB75B300B13862 /* Try.swift in Sources */,
 			);
